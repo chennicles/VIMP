@@ -1,3 +1,8 @@
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
+
 #Initialize variables
 n = 2000
 xs = np.random.normal(0,2,n*15)
