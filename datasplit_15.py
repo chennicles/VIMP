@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
-
+import vimp_loop as vloop
 
 #Initialize variables
 n = 2000
@@ -24,8 +24,8 @@ X2 = X[int(n/2):]
 
 
 #Estimating psi1 and psi2
-v1 = vimp(y1, X1, 3)
-v2 = vimp(y2, X2, 3)
+v1 = vloop.vimp(y1, X1, 3)
+v2 = vloop.vimp(y2, X2, 3)
 
 psi1 = np.array(v1.get())
 psi2 = np.array(v2.get())
