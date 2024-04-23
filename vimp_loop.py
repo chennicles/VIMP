@@ -4,12 +4,12 @@ from sklearn.linear_model import LinearRegression
 
 
 class vimp:
-    def __init__(self, y, x, d):
+    def __init__(self, y, x):
         self.y = y
         self.x = x
-        self.d = d
 
-    def get(self):
+    def get(self, d):
+        self.d = d
         poly = PolynomialFeatures(degree=self.d)
         X_poly = poly.fit_transform(self.x)
 
@@ -48,8 +48,8 @@ class vimp:
         y1 = self.y[:int(n / 2)]
         y2 = self.y[int(n / 2):]
 
-        X1 = X[:int(n / 2)]
-        X2 = X[int(n / 2):]
+        X1 = self.x[:int(n / 2)]
+        X2 = self.x[int(n / 2):]
 
         # Estimating psi1 and psi2
         v1 = self.get()
@@ -80,3 +80,4 @@ class vimp:
                 tau_q = t
 
         return tau_q, m
+
