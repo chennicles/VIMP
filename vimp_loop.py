@@ -1,37 +1,51 @@
 import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import ElasticNetCV
 
 
 class vimp:
     def get(self, y, x):
-        self.x = x
         self.y = y
+        self.x = x
         # Transform the entire predictor matrix
+        poly = PolynomialFeatures(degree=2)
+        X_poly = poly.fit_transform(self.x)
 
         # Fit the full model using ElasticNetCV
-        full_model = ElasticNetCV(cv=5, l1_ratio=[.1, .5, .7, .9, .95, .99, 1])
-        full_model.fit(self.x, self.y)
-        u = full_model.predict(self.x)
+        full_model = ElasticNetCV(cv=5, l1_ratio=[.1, .5, .7, .9, .95, .99, 1], max_iter=2000, tol=1e-2)
+        full_model.fit(X_poly, self.y)
+        u = full_model.predict(X_poly)
 
-        psi = []
+        # Compute the full model residual
+        full_residual = np.mean((self.y - u) ** 2)
+
+        # Array to store psi values for each predictor
+        psi_values = []
 
         # Loop over each predictor
         for i in range(self.x.shape[1]):
-            X_s = np.delete(self.x, i, axis=1)
+            # Create polynomial features for the current predictor
+            X_single = np.delete(self.x, i, axis=1)
+            X_single_poly = PolynomialFeatures(degree=2).fit_transform(X_single)
 
             # Fit the model for the current predictor
-            single_model = ElasticNetCV(cv=5, l1_ratio=[.1, .5, .7, .9, .95, .99, 1])
-            single_model.fit(X_s, u)
-            u_s = single_model.predict(X_s)
+            single_model = ElasticNetCV(cv=5, l1_ratio=[.1, .5, .7, .9, .95, .99, 1], max_iter=2000, tol=1e-2)
+            single_model.fit(X_single_poly, u)
+            u_single = single_model.predict(X_single_poly)
 
+            # Calculate the residual for the model with the current predictor
+            residual_single = np.mean((self.y - u_single) ** 2)
 
             # Calculate psi for the current predictor
-            psi1 = 1 - (np.mean((self.y - u) ** 2) / np.var(self.y)) - (1 - np.mean((self.y - u_s) ** 2) / np.var(self.y))
-            psi.append(psi1)
+            psi = 1 - (full_residual / np.var(self.y)) - (1 - (residual_single / np.var(self.y)))
+            psi_values.append(psi)
 
-        return psi
+        return psi_values
 
-    def datasplit(self, q):
+
+    def datasplit(self, y, X, q):
+        self.y = y
+        self.x = X
         n = len(self.x)
         y1 = self.y[:int(n / 2)]
         y2 = self.y[int(n / 2):]
@@ -40,6 +54,7 @@ class vimp:
         X2 = self.x[int(n / 2):]
 
         # Estimating psi1 and psi2
+
         v1 = self.get(y1, X1)
         v2 = self.get(y2, X2)
 
@@ -68,5 +83,6 @@ class vimp:
                 tau_q = t
 
         return tau_q, m
+
 
 
