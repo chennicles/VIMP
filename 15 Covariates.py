@@ -1,16 +1,16 @@
 import numpy as np
-import loess as ls
-import sklearn as sk
-from sklearn import ensemble
-from sklearn.ensemble import GradientBoostingRegressor
+import vimp_loop as vloop
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-
+from random import sample
 
 
 #Initialize variables
 n = 1000
-xs = np.random.normal(0,2,n*15)
-X = xs.reshape(n, 15)
+n_cov = 15
+xs = np.random.normal(0,2,n*n_cov)
+X = xs.reshape(n, n_cov)
 eps = np.random.normal(0,1,n)
 
 #Calculating indicator function terms
@@ -18,23 +18,26 @@ I1 = (X[:,0] > -2) & (X[:,0] < 2)
 I2 = X[:,1] < 0
 I3 = X[:,2] > 0
 
+#y = I1*abs(X[:,0]) + I2 + I3 + abs(X[:,5]/4)**3 + abs(X[:,6]/4)**5 + (7/3)*np.cos(X[:,10]/2) + eps
+y = y = I1*abs(X[:,0]) + I2 + I3 + abs(X[:,5]/4)**3 + abs(X[:,6]/4)**5 + (7/3)*np.cos(X[:,10]/2) + eps
 
-y = I1*X[:,0]*abs(X[:,0]) + I2*X[:,1] + I3*X[:,2] + abs(X[:,5]/4)**3 + abs(X[:,6]/4)**5 + (7/3)*np.cos(X[:,10]/2) + eps
+X1, X2, y1, y2 = train_test_split(X, y, test_size=0.5)
 
+        # Estimating psi1 and psi2
+v1 = vloop.vimp(y1,X1)
+v2 = vloop.vimp(y2,X2)
+psi1 = v1.get(y1,X1)
+psi2 = v2.get(y2,X2)
 
-#Get conditional mean
-grad = GradientBoostingRegressor(n_estimators=500, learning_rate=0.05, max_depth=3, random_state=42)
-model = grad.fit(X, y)
-u = model.predict(X)
-model1 = grad.fit(X[:,5:15], y)
-u1 = model1.predict(X[:,5:15])
-model2 = grad.fit(X[:,[0,1,2,3,4,10,11,12,13,14]], y)
-u2 = model2.predict(X[:,[0,1,2,3,4,10,11,12,13,14]])
-model3 = grad.fit(X[:,0:10], y)
-u3 = model3.predict(X[:,0:10])
+sig = [0,1,2,5,6,10]
+notsig = [3,4,7,8,9,11,12,13,14]
+plt.scatter([psi1[i] for i in sig], [psi2[i] for i in sig], color='r')
+plt.scatter([psi1[i] for i in notsig], [psi2[i] for i in notsig], color='b')
+plt.axline((0, 0), slope=1)
+plt.show()
 
+sum(1 for x in psi1 if x < 0)
+sum(1 for x in psi2 if x < 0)
 
-#Calculate Psi from equation
-psi1 = 1 - (np.mean((y-u)**2)/np.var(y)) - (1 - np.mean((y - u1)**2)/np.var(y))
-psi2 = 1 - (np.mean((y-u)**2)/np.var(y)) - (1 - np.mean((y - u2)**2)/np.var(y))
-psi3 = 1 - (np.mean((y-u)**2)/np.var(y)) - (1 - np.mean((y - u3)**2)/np.var(y))
+sum(1 for x in psi1 if x > 1)
+sum(1 for x in psi2 if x > 1)
