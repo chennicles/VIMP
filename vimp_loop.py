@@ -1,7 +1,6 @@
 import numpy as np
-from sklearn.tree import DecisionTreeRegressor  # For regression trees
 from sklearn.model_selection import train_test_split
-
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 
@@ -14,11 +13,10 @@ class vimp:
         self.x = x
 
         # Transform the entire predictor matrix
-        X_train, X_test, y_train, y_test = train_test_split(self.x, self.y, test_size=0.2)
-        tree_model = DecisionTreeRegressor()
-        tree_model.fit(X_train, y_train)
+        gbr = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=1, min_samples_leaf=1)
+        gbr.fit(self.x, self.y)
 
-        u = tree_model.predict(self.x)
+        u = gbr.predict(self.x)
 
         # Compute the full model residual
         full_residual = np.mean((self.y - u) ** 2)
@@ -30,11 +28,10 @@ class vimp:
         for i in range(self.x.shape[1]):
             # Create polynomial features for the current predictor
             X_s = np.delete(self.x, i, axis=1)
-            X_train, X_test, y_train, y_test = train_test_split(X_s, u, test_size=0.2)
-            tree_model = DecisionTreeRegressor()
-            tree_model.fit(X_train, y_train)
+            gbr = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=1, min_samples_leaf=1)
+            gbr.fit(X_s, u)
 
-            u_s = tree_model.predict(X_s)
+            u_s = gbr.predict(X_s)
 
             # Calculate the residual for the model with the current predictor
             residual_single = np.mean((self.y - u_s) ** 2)
